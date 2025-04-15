@@ -92,14 +92,6 @@ export class LinkedInAutomation implements JobBoard {
     await this.page.waitForURL('**/jobs/search/**');
 
     console.log('Waiting for search results to load...');
-    // Wait for the loading indicator to disappear
-    const loadingIndicator = this.page.locator('.jobs-search-results-list__loading');
-    try {
-      await loadingIndicator.waitFor({ state: 'hidden', timeout: 10000 });
-    } catch (error) {
-      console.log('No loading indicator found, proceeding...');
-    }
-
     // Wait for search results
     const resultCount = this.page.getByText(/\d+ results/);
     // check if we have results
@@ -112,42 +104,82 @@ export class LinkedInAutomation implements JobBoard {
     }
   }
 
+  private async handleEasyApplyForm(): Promise<void> {
+    if (!this.page) return;
+
+    // Wait for the Easy Apply modal to appear
+    const modal = this.page.locator('.jobs-easy-apply-modal');
+    if (await modal.isVisible()) {
+      console.log('Easy Apply modal found, proceeding...');
+    } else {
+      console.error('Failed to find Easy Apply modal');
+      throw new Error('Failed to find Easy Apply modal');
+    }
+
+    // Handle each step of the form
+    let currentStep = 1;
+    let isFormComplete = false;
+    while (!isFormComplete) {
+      console.log(`Processing step ${currentStep}...`);
+
+      // Wait for the current step to be visible
+      const stepContent = this.page.locator(`.jobs-easy-apply-content__step-${currentStep}`);
+      if (!(await stepContent.isVisible())) {
+        console.log('No more steps found, assuming application is complete');
+        isFormComplete = true;
+        break;
+      }
+
+      // Try to find and click the next button
+      const nextButton = this.page.getByRole('button', { name: /next|submit|review/i });
+      if (await nextButton.isVisible()) {
+        await nextButton.click();
+        // Wait for the next step to load
+        await this.page.waitForTimeout(1000);
+        currentStep++;
+      } else {
+        console.log('No next button found, assuming application is complete');
+        isFormComplete = true;
+        break;
+      }
+    }
+  }
+
+  private async uploadResume(resumePath: string): Promise<void> {
+    if (!this.page) return;
+    const resumeInput = this.page.locator('input[type="file"]');
+    await resumeInput.setInputFiles(resumePath);
+    // wait for the file to be uploaded
+    // response includes the file name and 201 status code
+    const fileName = resumePath.split('/')[resumePath.split('/').length - 1];
+    await this.page.waitForResponse(response => {
+      return response.status() === 201 && response.url().includes(fileName);
+    });
+  }
+
   async applyToJob(job: JobApplication, resumePath: string, coverLetter: string): Promise<void> {
     if (!this.page) {
       throw new Error('Not logged in. Call login() first.');
     }
 
+    console.log(`Applying to job: ${job.title} at ${job.company}`);
     await this.page.goto(job.url);
 
     // Click the Easy Apply button if available
     const easyApplyButton = this.page.getByRole('button', { name: 'Easy Apply' });
     if (await easyApplyButton.isVisible()) {
+      console.log('Found Easy Apply button, starting application process...');
       await easyApplyButton.click();
 
-      // TODO: Implement the application form filling logic
-      // This will vary based on the specific job application form
-
-      // Upload resume
-      if (resumePath) {
-        const fileInput = this.page.locator('input[type="file"]');
-        if (await fileInput.isVisible()) {
-          await fileInput.setInputFiles(resumePath);
-        }
+      try {
+        await this.handleEasyApplyForm();
+        console.log('Application process completed successfully');
+      } catch (error) {
+        console.error('Error during application process:', error);
+        throw error;
       }
-
-      // Fill in cover letter if provided
-      if (coverLetter) {
-        const coverLetterInput = this.page.locator('textarea');
-        if (await coverLetterInput.isVisible()) {
-          await coverLetterInput.fill(coverLetter);
-        }
-      }
-
-      // Submit application
-      const submitButton = this.page.locator('button[type="submit"]');
-      if (await submitButton.isVisible()) {
-        await submitButton.click();
-      }
+    } else {
+      console.log('No Easy Apply button found for this job');
     }
   }
 
