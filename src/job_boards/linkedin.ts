@@ -12,12 +12,12 @@ export class LinkedInAutomation implements JobBoard {
   async login(credentials: JobBoardCredentials): Promise<void> {
     this.page = await this.browser.newPage();
     await this.page.goto('https://www.linkedin.com/login');
-    
+
     // Fill in login credentials
     await this.page.fill('#username', credentials.email);
     await this.page.fill('#password', credentials.password);
     await this.page.click('button[type="submit"]');
-    
+
     // Wait for navigation after login
     await this.page.waitForNavigation();
   }
@@ -28,12 +28,18 @@ export class LinkedInAutomation implements JobBoard {
     }
 
     await this.page.goto('https://www.linkedin.com/jobs');
-    
+
     // Fill in search parameters
-    await this.page.fill('.jobs-search-box__text-input', params.title);
-    await this.page.fill('.jobs-search-box__text-input[aria-label="Location"]', params.location);
+    await this.page
+      .getByLabel('Search by title, skill, or company')
+      .filter({ has: this.page.locator('input[aria-hidden="true"]') })
+      .fill(params.title);
+    await this.page
+      .getByLabel('City, state, or zip code')
+      .filter({ has: this.page.locator('input[aria-hidden="true"]') })
+      .fill(params.location);
     await this.page.keyboard.press('Enter');
-    
+
     // Wait for search results
     await this.page.waitForSelector('.jobs-search-results-list');
   }
@@ -44,15 +50,15 @@ export class LinkedInAutomation implements JobBoard {
     }
 
     await this.page.goto(job.url);
-    
+
     // Click the Easy Apply button if available
     const easyApplyButton = await this.page.$('.jobs-apply-button');
     if (easyApplyButton) {
       await easyApplyButton.click();
-      
+
       // TODO: Implement the application form filling logic
       // This will vary based on the specific job application form
-      
+
       // Upload resume
       if (resumePath) {
         const fileInput = await this.page.$('input[type="file"]');
@@ -60,7 +66,7 @@ export class LinkedInAutomation implements JobBoard {
           await fileInput.setInputFiles(resumePath);
         }
       }
-      
+
       // Fill in cover letter if provided
       if (coverLetter) {
         const coverLetterInput = await this.page.$('textarea');
@@ -68,7 +74,7 @@ export class LinkedInAutomation implements JobBoard {
           await coverLetterInput.fill(coverLetter);
         }
       }
-      
+
       // Submit application
       const submitButton = await this.page.$('button[type="submit"]');
       if (submitButton) {
@@ -82,4 +88,4 @@ export class LinkedInAutomation implements JobBoard {
       await this.page.close();
     }
   }
-} 
+}

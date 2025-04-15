@@ -139,4 +139,10 @@ dist
 resumes/*
 
 # Cover letters
-cover-letters/* 
+cover-letters/*
+
+# Prettier
+.prettiercache
+
+# ESLint
+.eslintcache 

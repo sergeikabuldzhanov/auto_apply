@@ -23,4 +23,4 @@ export interface JobBoard {
   searchJobs(params: JobSearchParameters): Promise<void>;
   applyToJob(job: JobApplication, resumePath: string, coverLetter: string): Promise<void>;
   close(): Promise<void>;
-} 
+}
