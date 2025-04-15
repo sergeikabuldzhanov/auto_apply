@@ -1,0 +1,19 @@
+{
+  "name": "auto_apply",
+  "version": "1.0.0",
+  "description": "I'm tired of applying for jobs, automation to the rescue",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/sergeikabuldzhanov/auto_apply.git"
+  },
+  "author": "",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/sergeikabuldzhanov/auto_apply/issues"
+  },
+  "homepage": "https://github.com/sergeikabuldzhanov/auto_apply#readme"
+}
