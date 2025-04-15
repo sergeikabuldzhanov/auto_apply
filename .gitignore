@@ -146,3 +146,6 @@ cover-letters/*
 
 # ESLint
 .eslintcache 
+
+# Auth
+.auth/*
